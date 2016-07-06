@@ -1,0 +1,115 @@
+properties properties: [
+    [
+        $class: 'BuildDiscarderProperty',
+        strategy: [$class: 'LogRotator', artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '30']
+    ]
+]
+
+node('osx && ios') {
+    def contributors = null
+    def scmLogWs = 'scmLogs' + env.BUILD_NUMBER
+    currentBuild.result = "SUCCESS"
+
+    // clean workspace
+    deleteDir()
+    sshagent(['38bf8b09-9e52-421a-a8ed-5280fcb921af']) {
+	stage 'Checkout Source'
+	checkout scm
+    }
+
+    try {
+	stage name: 'Create Change Logs', concurrency: 1
+	ws("workspace/${env.JOB_NAME}/../${scmLogWs}") {
+	    sshagent(['38bf8b09-9e52-421a-a8ed-5280fcb921af']) {
+		checkout scm
+
+		// Load the SCM util scripts first
+		checkout([$class: 'GitSCM',
+			    branches: [[name: '*/master']],
+			    doGenerateSubmoduleConfigurations: false,
+			    extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'utils']],
+			    submoduleCfg: [],
+			    userRemoteConfigs: [[url: 'git@github.com:Cogosense/JenkinsUtils.git', credentialsId: '38bf8b09-9e52-421a-a8ed-5280fcb921af']]])
+
+		dir('./SCM') {
+		    sh '../utils/scmBuildDate > TIMESTAMP'
+		    sh '../utils/scmBuildTag > TAG'
+		    sh '../utils/scmBuildContributors > CONTRIBUTORS'
+		    sh '../utils/scmBuildOnHookEmail > ONHOOK_EMAIL'
+		    sh '../utils/scmCreateChangeLogs -o CHANGELOG'
+		    sh '../utils/scmTagLastBuild'
+		}
+	    }
+	    stash name: 'SCM', includes: 'SCM/**'
+	    // remove workspace
+	    deleteDir()
+	}
+
+	unstash 'SCM'
+	contributors = readFile './SCM/ONHOOK_EMAIL'
+
+	stage 'Notify Build Started'
+	if(contributors && contributors != '') {
+	    mail subject: "Jenkins Build Started: (${env.JOB_NAME})",
+		    body: "You are on the hook}.\nFor more information: ${env.JOB_URL}",
+		    to: contributors,
+		    from: 'support@cogosense.com'
+	}
+
+	stash name: 'Makefile', includes: 'Makefile'
+
+	stage 'Build Parallel'
+	parallel (
+	    "arm" : {
+		node('osx && ios') {
+		    // clean workspace
+		    deleteDir()
+		    unstash 'Makefile'
+		    sh 'make clean'
+		    sh 'make arm'
+		    stash name: 'arm', includes: '**/arm-apple-darwin/archive.framework/**'
+		}
+	    },
+	    "x86" : {
+		node('osx && ios') {
+		    // clean workspace
+		    deleteDir()
+		    unstash 'Makefile'
+		    sh 'make clean'
+		    sh 'make x86'
+		    stash name: 'x86', includes: '**/i386-apple-darwin/archive.framework/**'
+		}
+	    }
+	)
+
+	unstash 'arm'
+	unstash 'x86'
+
+	stage 'Assemble Framework'
+	sh 'make framework-no-build'
+
+	stage 'Archive Artifacts'
+	// Archive the SCM logs, the framework directory
+	step([$class: 'ArtifactArchiver',
+		artifacts: 'SCM/**, archive.framework/**',
+		fingerprint: true,
+		onlyIfSuccessful: true])
+
+    } catch(err) {
+	currentBuild.result = "FAILURE"
+	mail subject: "Jenkins Build Failed: (${env.JOB_NAME})",
+		body: "Project build error ${err}.\nFor more information: ${env.BUILD_URL}",
+		to: contributors ? contributors : '',
+		bcc: 'swilliams@cogosense.com',
+		from: 'support@cogosense.com'
+	throw err
+    }
+
+    stage 'Notify Build Completion'
+    if(contributors && contributors != '') {
+	mail subject: "Jenkins Build Completed Successfully: (${env.JOB_NAME})",
+		body: "You are off the hook}.\nFor more information: ${env.BUILD_URL}",
+		to: contributors,
+		from: 'support@cogosense.com'
+    }
+}
