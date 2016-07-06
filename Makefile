@@ -34,7 +34,7 @@ define Info_plist
 </plist>\n
 endef
 
-all : $(FRAMEWORKDIR)
+all : framework-build
 
 distclean : clean
 	$(RM) $(TARBALL)
@@ -100,6 +100,27 @@ export Info_plist
 
 Info.plist : Makefile
 	echo -e $$Info_plist > $@
+
+arm : $(SRCDIR)/$(ARM_ARCH)/$(FRAMEWORKDIR)
+x86 : $(SRCDIR)/$(X86_ARCH)/$(FRAMEWORKDIR)
+
+framework-build: arm arm64 x86 x86_64 $(FRAMEWORKDIR)
+
+#
+# The framework-no-build target is used by Jenkins to assemble
+# the results of the individual architectures built in parallel.
+#
+# The pipeline stash/unstash feature is used to assemble the build
+# results from each parallel phase.
+#
+# This target depends on a built file in each framework bundle,
+# if it is missing then the build fails as the master has no
+# rules to build it.
+#
+framework-no-build: \
+	$(SRCDIR)/$(ARM_ARCH)/$(FRAMEWORKDIR)/bin/$(NAME) \
+	$(SRCDIR)/$(X86_ARCH)/$(FRAMEWORKDIR)/bin/$(NAME) \
+	$(FRAMEWORKDIR)
 
 $(SRCDIR)/$(ARM_ARCH)/$(FRAMEWORKDIR) : $(SRCDIR)/$(ARM_ARCH)/Makefile
 	make -C $(SRCDIR)/$(ARM_ARCH) DESTDIR=$(TOPDIR)/$(SRCDIR)/$(ARM_ARCH) install
