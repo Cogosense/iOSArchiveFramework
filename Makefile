@@ -2,7 +2,7 @@ SHELL = /bin/bash
 NAME = libarchive
 VERSION = 3.1.2
 TARBALL = $(NAME)-$(VERSION).tar.gz
-TOPDIR = $(PWD)
+TOPDIR = $(CURDIR)
 SRCDIR = $(NAME)-$(VERSION)
 ARM_ARCH = arm-apple-darwin
 X86_ARCH = i386-apple-darwin
@@ -34,7 +34,7 @@ define Info_plist
 </plist>\n
 endef
 
-all : framework-build
+all : env framework-build
 
 distclean : clean
 	$(RM) $(TARBALL)
@@ -45,6 +45,9 @@ clean : mostlyclean
 mostlyclean :
 	$(RM) Info.plist
 	$(RM) -r $(SRCDIR)
+
+env:
+	env
 
 $(TARBALL) :
 	curl --retry 10 -s -o $@ $(DOWNLOAD_URL) || $(RM) $@
@@ -104,7 +107,7 @@ Info.plist : Makefile
 arm : $(SRCDIR)/$(ARM_ARCH)/$(FRAMEWORKDIR)
 x86 : $(SRCDIR)/$(X86_ARCH)/$(FRAMEWORKDIR)
 
-framework-build: arm arm64 x86 x86_64 $(FRAMEWORKDIR)
+framework-build: arm x86 $(FRAMEWORKDIR)
 
 #
 # The framework-no-build target is used by Jenkins to assemble
