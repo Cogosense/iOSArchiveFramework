@@ -118,8 +118,8 @@ framework-build: arm arm64 x86 x86_64 $(FRAMEWORKDIR)
 # rules to build it.
 #
 framework-no-build: \
-	$(SRCDIR)/$(ARM_ARCH)/$(FRAMEWORKDIR)/bin/$(NAME) \
-	$(SRCDIR)/$(X86_ARCH)/$(FRAMEWORKDIR)/bin/$(NAME) \
+	$(SRCDIR)/$(ARM_ARCH)/$(FRAMEWORKDIR)/bin/$(FRAMEWORK_NAME) \
+	$(SRCDIR)/$(X86_ARCH)/$(FRAMEWORKDIR)/bin/$(FRAMEWORK_NAME) \
 	$(FRAMEWORKDIR)
 
 $(SRCDIR)/$(ARM_ARCH)/$(FRAMEWORKDIR) : $(SRCDIR)/$(ARM_ARCH)/Makefile
