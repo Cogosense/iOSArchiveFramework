@@ -53,33 +53,33 @@ node('osx && ios') {
 
 	stage 'Build Parallel'
 	parallel (
-	    "arm" : {
+	    "armv7" : {
 		node('osx && ios') {
 		    // clean workspace
 		    deleteDir()
 		    unstash 'Makefile'
 		    sh 'make clean'
-		    sh 'make arm'
-		    stash name: 'arm', includes: '**/arm-apple-darwin/archive.framework/**'
+		    sh 'make ARCHS=armv7'
+		    stash name: 'armv7', includes: '**/armv7/archive.framework/**'
 		}
 	    },
-	    "x86" : {
+	    "arm64" : {
 		node('osx && ios') {
 		    // clean workspace
 		    deleteDir()
 		    unstash 'Makefile'
 		    sh 'make clean'
-		    sh 'make x86'
-		    stash name: 'x86', includes: '**/i386-apple-darwin/archive.framework/**'
+		    sh 'make ARCHS=arm64'
+		    stash name: 'arm64', includes: '**/arm64/archive.framework/**'
 		}
 	    }
 	)
 
-	unstash 'arm'
-	unstash 'x86'
+	unstash 'armv7'
+	unstash 'arm64'
 
 	stage 'Assemble Framework'
-	sh 'make framework-no-build'
+	sh 'make ARCHS="armv7 arm64" framework-no-build'
 
 	stage 'Archive Artifacts'
 	// Archive the SCM logs, the framework directory
