@@ -5,3 +5,4 @@ libarchive*
 archive.framework.tar.*
 Info.plist
 build/
+**/xcuserdata
