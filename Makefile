@@ -131,6 +131,7 @@ env :
 	env
 
 $(SRCROOT)/$(TARBALL) :
+	mkdir -p $(SRCROOT)
 	curl -L --retry 10 -s -o $@ $(DOWNLOAD_URL) || $(RM) $@
 
 $(SRCDIR)/configure : $(SRCROOT)/$(TARBALL)
