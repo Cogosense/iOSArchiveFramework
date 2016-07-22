@@ -16,7 +16,8 @@
 # make ARCHS="armv7 arm64" ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=bitcode - create bitcode
 # make ARCHS="armv7 arm64" ENABLE_BITCODE=YES BITCODE_GENERATION_MODE=marker - add bitcode marker (but no real bitcode)
 # 
-# The bitcode flags are standard Xcode flags.
+# The ENABLE_BITCODE and BITCODE_GENERATION_MODE flags are set in the Xcode project settings
+#
 
 SHELL = /bin/bash
 
@@ -44,14 +45,17 @@ comma:= ,
 NAME = libarchive
 VERSION = 3.1.2
 TOPDIR = $(CURDIR)
-SRCDIR = $(TOPDIR)/$(NAME)-$(VERSION)
 #
-# ARCHS, BUILT_PRODUCTS_DIR and DERIVED_FILE_DIR are set by xcode
+# ARCHS, BUILT_PRODUCTS_DIR and BUILDROOT are set by xcode
 # only set them if make is invoked directly
 #
 ARCHS ?= $(ARM_V7_ARCH) $(ARM_V7S_ARCH) $(ARM_64_ARCH) $(I386_ARCH) $(X86_64_ARCH)
 BUILT_PRODUCTS_DIR ?= $(TOPDIR)/build
-DERIVED_FILE_DIR ?= $(TOPDIR)/build
+OBJECT_FILE_DIR ?= $(TOPDIR)/build
+DERIVED_SOURCES_DIR ?= $(TOPDIR)/build
+SRCROOT = $(DERIVED_SOURCES_DIR)
+BUILDROOT = $(OBJECT_FILE_DIR)
+SRCDIR = $(SRCROOT)/$(NAME)-$(VERSION)
 TARBALL = $(NAME)-$(VERSION).tar.gz
 ARM_V7_HOST = armv7-apple-darwin
 ARM_V7S_HOST = armv7s-apple-darwin
@@ -67,6 +71,20 @@ FRAMEWORK_VERSION = A
 FRAMEWORK_NAME = archive
 FRAMEWORKBUNDLE = $(FRAMEWORK_NAME).framework
 DOWNLOAD_URL = http://www.libarchive.org/downloads/$(TARBALL)
+
+#
+# Files used to trigger builds for each architecture
+# TARGET_BUILD_LIB file under install prefix that can be built directly
+# TARGET_NOBUILD_ARTIFACT file under install prefix that is built indirectly
+#
+TARGET_BUILD_LIB = /lib/libarchive.a
+TARGET_NOBUILD_ARTIFACT = /include/archive.h
+
+INSTALLED_BUILD_LIB = $(FRAMEWORKBUNDLE)$(TARGET_BUILD_LIB)
+INSTALLED_NOBUILD_ARTIFACT = $(FRAMEWORKBUNDLE)$(TARGET_NOBUILD_ARTIFACT)
+
+BUILT_LIBS = $(addprefix $(BUILDROOT)/, $(addsuffix /$(INSTALLED_BUILD_LIB), $(ARCHS)))
+NOBUILD_ARTIFACTS = $(addprefix $(BUILDROOT)/, $(addsuffix /$(INSTALLED_NOBUILD_ARTIFACT), $(ARCHS)))
 
 define Info_plist
 <?xml version="1.0" encoding="UTF-8"?>\n
@@ -91,10 +109,10 @@ define Info_plist
 </plist>\n
 endef
 
-all : env framework-build
+all : framework-build
 
 distclean : clean
-	$(RM) $(TARBALL)
+	$(RM) $(SRCROOT)/$(TARBALL)
 
 clean : mostlyclean
 	$(RM) -r $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)
@@ -103,68 +121,68 @@ clean : mostlyclean
 
 mostlyclean :
 	$(RM) Info.plist
-	$(RM) -r $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)
-	$(RM) -r $(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)
-	$(RM) -r $(DERIVED_FILE_DIR)/$(ARM_64_ARCH)
-	$(RM) -r $(DERIVED_FILE_DIR)/$(I386_ARCH)
-	$(RM) -r $(DERIVED_FILE_DIR)/$(X86_64_ARCH)
+	$(RM) -r $(BUILDROOT)/$(ARM_V7_ARCH)
+	$(RM) -r $(BUILDROOT)/$(ARM_V7S_ARCH)
+	$(RM) -r $(BUILDROOT)/$(ARM_64_ARCH)
+	$(RM) -r $(BUILDROOT)/$(I386_ARCH)
+	$(RM) -r $(BUILDROOT)/$(X86_64_ARCH)
 
 env :
 	env
 
-$(TARBALL) :
+$(SRCROOT)/$(TARBALL) :
 	curl -L --retry 10 -s -o $@ $(DOWNLOAD_URL) || $(RM) $@
 
-$(SRCDIR)/configure : $(TARBALL)
-	tar xf $(TARBALL)
+$(SRCDIR)/configure : $(SRCROOT)/$(TARBALL)
+	tar -C $(SRCROOT) -xmf $(SRCROOT)/$(TARBALL)
 
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH) \
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH) \
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH) \
-$(DERIVED_FILE_DIR)/$(I386_ARCH) \
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH) :
+$(BUILDROOT)/$(ARM_V7_ARCH) \
+$(BUILDROOT)/$(ARM_V7S_ARCH) \
+$(BUILDROOT)/$(ARM_64_ARCH) \
+$(BUILDROOT)/$(I386_ARCH) \
+$(BUILDROOT)/$(X86_64_ARCH) :
 	mkdir -p $@
 
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE) : AC_HOST = $(ARM_V7_HOST)
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE) : AC_SDK = iphoneos
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE) : AC_C_ARCH = -arch $(ARM_V7_ARCH)
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE) : AC_CPP_ARCH = -arch arm
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH) $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/Makefile
-	$(MAKE) -C $(DERIVED_FILE_DIR)/$(ARM_V7_ARCH) DESTDIR=$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH) install
+$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : AC_HOST = $(ARM_V7_HOST)
+$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : AC_SDK = iphoneos
+$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : AC_C_ARCH = -arch $(ARM_V7_ARCH)
+$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : AC_CPP_ARCH = -arch arm
+$(BUILDROOT)/$(ARM_V7_ARCH)/$(INSTALLED_BUILD_LIB) : $(BUILDROOT)/$(ARM_V7_ARCH) $(BUILDROOT)/$(ARM_V7_ARCH)/Makefile
+	$(MAKE) -C $(BUILDROOT)/$(ARM_V7_ARCH) DESTDIR=$(BUILDROOT)/$(ARM_V7_ARCH) install
 
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE) : AC_HOST = $(ARM_V7S_HOST)
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE) : AC_SDK = iphoneos
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE) : AC_C_ARCH = -arch $(ARM_V7S_ARCH)
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE) : AC_CPP_ARCH = -arch arm
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH) $(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/Makefile
-	$(MAKE) -C $(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH) DESTDIR=$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH) install
+$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : AC_HOST = $(ARM_V7S_HOST)
+$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : AC_SDK = iphoneos
+$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : AC_C_ARCH = -arch $(ARM_V7S_ARCH)
+$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : AC_CPP_ARCH = -arch arm
+$(BUILDROOT)/$(ARM_V7S_ARCH)/$(INSTALLED_BUILD_LIB) : $(BUILDROOT)/$(ARM_V7S_ARCH) $(BUILDROOT)/$(ARM_V7S_ARCH)/Makefile
+	$(MAKE) -C $(BUILDROOT)/$(ARM_V7S_ARCH) DESTDIR=$(BUILDROOT)/$(ARM_V7S_ARCH) install
 
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE) : AC_HOST = $(ARM_64_HOST)
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE) : AC_SDK = iphoneos
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE) : AC_C_ARCH = -arch $(ARM_64_ARCH)
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE) : AC_CPP_ARCH = -arch arm
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(ARM_64_ARCH) $(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/Makefile
-	$(MAKE) -C $(DERIVED_FILE_DIR)/$(ARM_64_ARCH) DESTDIR=$(DERIVED_FILE_DIR)/$(ARM_64_ARCH) install
+$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : AC_HOST = $(ARM_64_HOST)
+$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : AC_SDK = iphoneos
+$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : AC_C_ARCH = -arch $(ARM_64_ARCH)
+$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : AC_CPP_ARCH = -arch arm
+$(BUILDROOT)/$(ARM_64_ARCH)/$(INSTALLED_BUILD_LIB) : $(BUILDROOT)/$(ARM_64_ARCH) $(BUILDROOT)/$(ARM_64_ARCH)/Makefile
+	$(MAKE) -C $(BUILDROOT)/$(ARM_64_ARCH) DESTDIR=$(BUILDROOT)/$(ARM_64_ARCH) install
 
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE) : AC_HOST = $(I386_HOST)
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE) : AC_SDK = iphonesimulator
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE) : AC_C_ARCH = -arch $(I386_ARCH)
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE) : AC_CPP_ARCH = -arch $(I386_ARCH)
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(I386_ARCH) $(DERIVED_FILE_DIR)/$(I386_ARCH)/Makefile
-	$(MAKE) -C $(DERIVED_FILE_DIR)/$(I386_ARCH) DESTDIR=$(DERIVED_FILE_DIR)/$(I386_ARCH) install
+$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : AC_HOST = $(I386_HOST)
+$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : AC_SDK = iphonesimulator
+$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : AC_C_ARCH = -arch $(I386_ARCH)
+$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : AC_CPP_ARCH = -arch $(I386_ARCH)
+$(BUILDROOT)/$(I386_ARCH)/$(INSTALLED_BUILD_LIB) : $(BUILDROOT)/$(I386_ARCH) $(BUILDROOT)/$(I386_ARCH)/Makefile
+	$(MAKE) -C $(BUILDROOT)/$(I386_ARCH) DESTDIR=$(BUILDROOT)/$(I386_ARCH) install
 
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE) : AC_HOST = $(X86_64_HOST)
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE) : AC_SDK = iphonesimulator
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE) : AC_C_ARCH = -arch $(X86_64_ARCH)
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE) : AC_CPP_ARCH = -arch $(I386_ARCH)
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/$(FRAMEWORKBUNDLE) : $(DERIVED_FILE_DIR)/$(X86_64_ARCH) $(DERIVED_FILE_DIR)/$(X86_64_ARCH)/Makefile
-	 $(MAKE) -C $(DERIVED_FILE_DIR)/$(X86_64_ARCH) DESTDIR=$(DERIVED_FILE_DIR)/$(X86_64_ARCH) install
+$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : AC_HOST = $(X86_64_HOST)
+$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : AC_SDK = iphonesimulator
+$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : AC_C_ARCH = -arch $(X86_64_ARCH)
+$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : AC_CPP_ARCH = -arch $(I386_ARCH)
+$(BUILDROOT)/$(X86_64_ARCH)/$(INSTALLED_BUILD_LIB) : $(BUILDROOT)/$(X86_64_ARCH) $(BUILDROOT)/$(X86_64_ARCH)/Makefile
+	 $(MAKE) -C $(BUILDROOT)/$(X86_64_ARCH) DESTDIR=$(BUILDROOT)/$(X86_64_ARCH) install
 
-$(DERIVED_FILE_DIR)/$(ARM_V7_ARCH)/Makefile \
-$(DERIVED_FILE_DIR)/$(ARM_V7S_ARCH)/Makefile \
-$(DERIVED_FILE_DIR)/$(ARM_64_ARCH)/Makefile \
-$(DERIVED_FILE_DIR)/$(I386_ARCH)/Makefile \
-$(DERIVED_FILE_DIR)/$(X86_64_ARCH)/Makefile : $(SRCDIR)/configure
+$(BUILDROOT)/$(ARM_V7_ARCH)/Makefile \
+$(BUILDROOT)/$(ARM_V7S_ARCH)/Makefile \
+$(BUILDROOT)/$(ARM_64_ARCH)/Makefile \
+$(BUILDROOT)/$(I386_ARCH)/Makefile \
+$(BUILDROOT)/$(X86_64_ARCH)/Makefile : $(SRCDIR)/configure
 	cd $(dir $@) && \
 	    $(SRCDIR)/configure \
 		--prefix=/$(FRAMEWORKBUNDLE) \
@@ -191,7 +209,7 @@ export Info_plist
 Info.plist : Makefile
 	echo -e $$Info_plist > $@
 
-framework-build: $(addprefix $(DERIVED_FILE_DIR)/, $(addsuffix /$(FRAMEWORKBUNDLE), $(ARCHS))) $(FRAMEWORKBUNDLE).tar.bz2
+framework-build: $(BUILT_LIBS) $(FRAMEWORKBUNDLE).tar.bz2
 
 #
 # The framework-no-build target is used by Jenkins to assemble
@@ -204,9 +222,18 @@ framework-build: $(addprefix $(DERIVED_FILE_DIR)/, $(addsuffix /$(FRAMEWORKBUNDL
 # if it is missing then the build fails as the master has no
 # rules to build it.
 #
-framework-no-build: $(addprefix $(DERIVED_FILE_DIR)/, $(addsuffix /$(FRAMEWORKBUNDLE)/lib/$(NAME).a, $(ARCHS))) $(FRAMEWORKBUNDLE).tar.bz2
+framework-no-build: $(NOBUILD_ARTIFACTS) $(FRAMEWORKBUNDLE).tar.bz2
+
+$(FRAMEWORKBUNDLE).tar.bz2 : $(BUILT_LIBS)
+	$(MAKE) bundle
+	$(RM) -f $(FRAMEWORKBUNDLE).tar.bz2
+	tar -C $(BUILT_PRODUCTS_DIR) -cjf $(FRAMEWORKBUNDLE).tar.bz2 $(FRAMEWORKBUNDLE)
 
 FIRST_ARCH = $(firstword $(ARCHS))
+
+.PHONY : bundle-dirs bundle-resources bundle-headers bundle-libraries
+
+bundle : bundle-dirs bundle-resources bundle-headers bundle-libraries
 
 bundle-dirs :
 	$(RM) -r $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)
@@ -226,15 +253,8 @@ bundle-resources : Info.plist bundle-dirs
 	cp Info.plist $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Resources/
 
 bundle-headers : bundle-dirs
-	cp -R $(DERIVED_FILE_DIR)/$(FIRST_ARCH)/$(FRAMEWORKBUNDLE)/include/  $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers/
+	cp -R $(BUILDROOT)/$(FIRST_ARCH)/$(FRAMEWORKBUNDLE)/include/  $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/Headers/
 
 bundle-libraries : bundle-dirs
-	for arch in $(ARCHS) ; do libs="$$libs $(DERIVED_FILE_DIR)/$$arch/$(FRAMEWORKBUNDLE)/lib/libarchive.a" ; done ; \
-	xcrun -sdk iphoneos lipo -create $$libs -o $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/$(FRAMEWORK_NAME)
-
-$(FRAMEWORKBUNDLE) : bundle-dirs bundle-resources bundle-headers bundle-libraries
-
-$(FRAMEWORKBUNDLE).tar.bz2 : $(FRAMEWORKBUNDLE)
-	$(RM) -f $(FRAMEWORKBUNDLE).tar.bz2
-	tar -C $(BUILT_PRODUCTS_DIR) -cjf $(FRAMEWORKBUNDLE).tar.bz2 $(FRAMEWORKBUNDLE)
+	xcrun -sdk iphoneos lipo -create $(BUILT_LIBS) -o $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKBUNDLE)/Versions/$(FRAMEWORK_VERSION)/$(FRAMEWORK_NAME)
 

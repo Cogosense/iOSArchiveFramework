@@ -16,16 +16,16 @@
 /* End PBXGroup section */
 
 /* Begin PBXLegacyTarget section */
-		F1C8001D1D2F0503004CFAAB /* iOSArchiveFramework */ = {
+		F1C8001D1D2F0503004CFAAB /* archive.framework */ = {
 			isa = PBXLegacyTarget;
 			buildArgumentsString = "$(ACTION)";
-			buildConfigurationList = F1C8001E1D2F0503004CFAAB /* Build configuration list for PBXLegacyTarget "iOSArchiveFramework" */;
+			buildConfigurationList = F1C8001E1D2F0503004CFAAB /* Build configuration list for PBXLegacyTarget "archive.framework" */;
 			buildPhases = (
 			);
 			buildToolPath = /usr/bin/make;
 			dependencies = (
 			);
-			name = iOSArchiveFramework;
+			name = archive.framework;
 			passBuildSettingsInEnvironment = 1;
 			productName = iOSArchiveFramework;
 		};
@@ -55,7 +55,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				F1C8001D1D2F0503004CFAAB /* iOSArchiveFramework */,
+				F1C8001D1D2F0503004CFAAB /* archive.framework */,
 			);
 		};
 /* End PBXProject section */
@@ -178,13 +178,14 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F1C8001E1D2F0503004CFAAB /* Build configuration list for PBXLegacyTarget "iOSArchiveFramework" */ = {
+		F1C8001E1D2F0503004CFAAB /* Build configuration list for PBXLegacyTarget "archive.framework" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F1C8001F1D2F0503004CFAAB /* Debug */,
 				F1C800201D2F0503004CFAAB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
