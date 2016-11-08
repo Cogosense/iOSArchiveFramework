@@ -24,17 +24,21 @@ SHELL = /bin/bash
 #
 # set minimum iOS version supported
 #
-MIN_IOS_VER = 6.1
+ifneq "$(IPHONEOS_DEPLOYMENT_TARGET)" ""
+    MIN_IOS_VER = $(IPHONEOS_DEPLOYMENT_TARGET)
+else
+    MIN_IOS_VER = 8.0
+endif
 
 #
 # enable bitcode support
 #
 ifeq "$(ENABLE_BITCODE)" "YES"
     ifeq "$(BITCODE_GENERATION_MODE)" "marker"
-	XCODE_BITCODE_FLAG = -fembed-bitcode-marker
+        XCODE_BITCODE_FLAG = -fembed-bitcode-marker
     endif
     ifeq "$(BITCODE_GENERATION_MODE)" "bitcode"
-	XCODE_BITCODE_FLAG = -fembed-bitcode
+        XCODE_BITCODE_FLAG = -fembed-bitcode
     endif
 endif
 
