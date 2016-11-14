@@ -1,0 +1,25 @@
+
+Production 4.0.0 created on Sun 13 Nov 2016 00:22:33 PST
+================================================================================
+c02bf9d: steve.williams@telxio.com               : Production release 4.0.0
+25a1049: steve.williams@telxio.com               : updated project settings to recommended
+2376954: steve.williams@telxio.com               : issue Cogosense/Client/#12 allow minimum iOS version to be set by xcode
+c608d5b: steve.williams@telxio.com               : Accept Xcode license on new install or update
+4331a01: steve.williams@telxio.com               : store source archive in location common to all variants to save downloads
+6fdd5f7: steve.williams@telxio.com               : make SRCROOT directory before downloading source archive
+acf2e84: steve.williams@telxio.com               : ignore xcode user data
+c330ff6: steve.williams@telxio.com               : Use derived sources directory for downloaded source to prevent build collisions
+e5e4fdf: steve.williams@telxio.com               : output products to BUILT_PRODUCTS_DIR not BUILD_DIR
+259c41e: steve.williams@telxio.com               : Support active architecture only and add proper bitcode support
+88e7137: steve.williams@telxio.com               : Remove unnecessary additional workspace
+1e0011d: steve.williams@telxio.com               : Capture env
+cf1ae7f: steve.williams@telxio.com               : add vim temp file
+68dfb9a: steve.williams@telxio.com               : removed stray brace from email message
+0ef38f4: steve.williams@telxio.com               : Archive and compress framework artifact
+2da44a9: steve.williams@telxio.com               : Add Xcode project file to use external Makefile
+bd5524e: steve.williams@telxio.com               : Change dependency for framework-no-build
+d7d3f9f: steve.williams@telxio.com               : Fix dependencies for framework-no-build target
+502ceaf: steve.williams@telxio.com               : Fix dependencies for parallel build support
+7649cd8: steve.williams@telxio.com               : Add arm and x86 targets for parallel builds
+0187f91: steve.williams@telxio.com               : Add readme and pipeline build script
+1ee410d: steve.williams@telxio.com               : Initial checkin
