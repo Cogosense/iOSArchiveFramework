@@ -23,3 +23,8 @@ d7d3f9f: steve.williams@telxio.com               : Fix dependencies for framewor
 7649cd8: steve.williams@telxio.com               : Add arm and x86 targets for parallel builds
 0187f91: steve.williams@telxio.com               : Add readme and pipeline build script
 1ee410d: steve.williams@telxio.com               : Initial checkin
+
+Production 4.2.0 created on Fri 20 Jan 2017 18:07:33 PST
+================================================================================
+146ec42: steve.williams@telxio.com               : add CHANGELOG
+faeb831: steve.williams@telxio.com               : Development started for 4.1.0_dev
