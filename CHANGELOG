@@ -28,3 +28,12 @@ Production 4.2.0 created on Fri 20 Jan 2017 18:07:33 PST
 ================================================================================
 146ec42: steve.williams@telxio.com               : add CHANGELOG
 faeb831: steve.williams@telxio.com               : Development started for 4.1.0_dev
+
+Production 4.3.0 created on Tue 21 Mar 2017 16:33:18 PDT
+================================================================================
+95dc4b7: steve.williams@telxio.com               : clean workspace before checkout
+5b510c6: steve.williams@telxio.com               : simplify changelog generation
+1caf35a: steve.williams@telxio.com               : updated to use common pipeline Utils methods
+08e7a9f: steve.williams@telxio.com               : remove dependency of BUILT_LIBS on framework.tar.bz2 - it causes library to be rebuilt when using target framework-no-build
+5b5ae3e: steve.williams@telxio.com               : fix empty email stage problem in DEV by echoing message
+d59e4c1: steve.williams@telxio.com               : only send build email in production
