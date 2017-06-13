@@ -114,7 +114,7 @@ define Info_plist
 </plist>\n
 endef
 
-all : framework-build
+all install : framework-build
 
 distclean : clean
 	$(RM) $(PROJECT_TEMP_DIR)/$(TARBALL)
