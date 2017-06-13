@@ -6,3 +6,4 @@ archive.framework.tar.*
 Info.plist
 build/
 **/xcuserdata
+DerivedData/
