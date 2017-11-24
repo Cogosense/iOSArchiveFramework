@@ -21,6 +21,8 @@
 
 SHELL = /bin/bash
 
+EXTRA_CONFIGURE_ARGS =
+
 #
 # set minimum iOS version supported
 #
@@ -28,6 +30,13 @@ ifneq "$(IPHONEOS_DEPLOYMENT_TARGET)" ""
     MIN_IOS_VER = $(IPHONEOS_DEPLOYMENT_TARGET)
 else
     MIN_IOS_VER = 8.0
+endif
+
+#
+# futimens is only available on iOS 11.0 and up
+#
+ifeq "$(shell echo '$(MIN_IOS_VER) < 11.0' | bc -l)" "1"
+	EXTRA_CONFIGURE_ARGS += ac_cv_func_futimens=no
 endif
 
 #
@@ -203,6 +212,7 @@ $(BUILDROOT)/$(X86_64_ARCH)/Makefile : $(SRCDIR)/configure
 		--without-bz2lib \
 		--without-xml2 \
 		--without-iconv \
+		$(EXTRA_CONFIGURE_ARGS) \
 		CC='xcrun --sdk $(AC_SDK) clang $(AC_C_ARCH)' \
 		CFLAGS='-miphoneos-version-min=$(MIN_IOS_VER) $(XCODE_BITCODE_FLAG)' \
 		CPP='xcrun --sdk $(AC_SDK) clang $(AC_CPP_ARCH) -E' \
