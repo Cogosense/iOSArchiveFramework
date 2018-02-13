@@ -37,3 +37,12 @@ Production 4.3.0 created on Tue 21 Mar 2017 16:33:18 PDT
 08e7a9f: steve.williams@telxio.com               : remove dependency of BUILT_LIBS on framework.tar.bz2 - it causes library to be rebuilt when using target framework-no-build
 5b5ae3e: steve.williams@telxio.com               : fix empty email stage problem in DEV by echoing message
 d59e4c1: steve.williams@telxio.com               : only send build email in production
+
+Production 4.4.0 created on Mon 12 Feb 2018 17:17:47 PST
+================================================================================
+958270a: steve.williams@telxio.com               : futimens not available if MIN iOS < 11.0
+7af0548: steve.williams@telxio.com               : update build settings to recommended for xcode9
+3b2287c: steve.williams@telxio.com               : include patches directory if it exists in slave stash
+19da762: steve.williams@telxio.com               : Merge branch '4.3.0'
+d846ee0: steve.williams@telxio.com               : issue #1 turn on bitcode generation
+676c3b6: steve.williams@telxio.com               : rebuild fat archive if requested ARCHS changes
