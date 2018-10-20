@@ -222,8 +222,7 @@ $(BUILDROOT)/$(X86_64_ARCH)/Makefile : $(SRCDIR)/configure
 		OTOOL='xcrun --sdk $(AC_SDK) otool' \
 		STRIP='xcrun --sdk $(AC_SDK) strip' \
 		NM='xcrun --sdk $(AC_SDK) nm' \
-		LIBTOOL='xcrun --sdk $(AC_SDK) libtool' \
-		LIBTOOLFLAGS='--silent'
+		LIBTOOL='xcrun --sdk $(AC_SDK) libtool'
 
 export Info_plist
 
