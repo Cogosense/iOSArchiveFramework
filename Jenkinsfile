@@ -52,7 +52,7 @@ node('osx && ios') {
         }
 
         stage ('Build Parallel') {
-            stash name: 'Makefile', includes: 'Makefile,patches/**'
+            stash name: 'Makefile', includes: 'Makefile,archive/**,patches/**'
             parallel (
                 "armv7" : {
                     node('osx && ios') {
@@ -86,7 +86,7 @@ node('osx && ios') {
             unstash 'arm64'
             // Accept the license on first install and updates
             Utils.&acceptXcodeLicense()
-            sh 'make ARCHS="armv7 arm64" framework-no-build'
+            sh 'make ARCHS="armv7 arm64" bundle'
         }
 
         stage ('Archive Artifacts') {

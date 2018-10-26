@@ -1,9 +1,9 @@
 *.bak
 *.swp
 .DS_Store
-libarchive*
-archive.framework.tar.*
-Info.plist
-build/
+/Info.plist
+/build/
 **/xcuserdata
-DerivedData/
+/DerivedData/
+/archive.framework.tar.bz2
+/Carthage
