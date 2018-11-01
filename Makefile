@@ -24,7 +24,7 @@ SHELL = /bin/bash
 #
 # library to be built
 NAME = libarchive
-VERSION = 3.1.2
+VERSION = 3.3.3
 
 #
 # Download location URL
@@ -173,7 +173,7 @@ $(MAKER_ARCHIVES_DIR)/$(TARBALL) :
 configure : dirs tarball $(PKGSRCDIR)/configure
 
 $(PKGSRCDIR)/configure :
-	tar -C $(MAKER_SOURCES_DIR) -xmf $(MAKER_ARCHIVES_DIR)/$(TARBALL)
+	tar -C $(MAKER_SOURCES_DIR) -xf $(MAKER_ARCHIVES_DIR)/$(TARBALL)
 	if [ -d patches/$(VERSION) ] ; then \
 		for p in patches/$(VERSION)/*.patch ; do \
 			if [ -f $$p ] ; then \
