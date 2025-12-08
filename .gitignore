@@ -5,5 +5,7 @@
 /build/
 **/xcuserdata
 /DerivedData/
-/archive.framework.tar.bz2
+/archive.xcframework.tar.gz
+/archive.xcframework.tar.bz2
+/archive.xcframework.zip
 /Carthage

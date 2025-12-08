@@ -1,0 +1,153 @@
+pool:
+  name: macOS-15
+#  vmImage: macOS-15
+
+# Build an XCFramework, and optionally
+# release a binary zip file to a second repository
+# used as the SPM repository.
+#
+# To build this on your own Azure DevOps Organization
+#
+# 1. Set up Azure Devops connection to Github
+# 2. Set the global variables here to match your setup
+# 3. Go add a pipeline in Azure DevOps
+#
+# Note there are two repos involved:
+# 1. Build repo - the repo this pipeline script is located
+# 2. SPM repo - the repo used to ship the binary framework,
+#    that is the one specified in 'moduleRepoName'
+#
+# The group contains the github pat as GH_TOKEN, for the gh tool
+#
+# The githubConnection is the authenticated service connection
+# between Azure and Github
+#
+#
+
+variables:
+  - group: FleetSaferIOS
+  - name: moduleName
+    value: 'archive'
+  - name: moduleRepoName
+    value: 'Archive-iOS'
+  - name: githubConnection
+    value: 'Cogosense'
+  - name: githubOrg
+    value: 'Cogosense'
+  - name: gitUserEmail
+    value: 'cogojenkins@cogosense.com'
+  - name: gitUserName
+    value: "$(Build.DefinitionName) Azure Pipeline"
+
+resources:
+  repositories:
+    - repository: 'packageRepo'
+      type: github
+      name: 'Cogosense/Archive-iOS'
+      endpoint: 'Cogosense'
+      ref: main
+
+jobs:
+  - job: Build
+    workspace:
+      clean: all
+    displayName: Build XCFramework
+    steps:
+      - checkout: self
+        persistCredentials: true
+        fetchTags: true
+      - script: |
+          version=$(make version)
+          echo "##vso[task.setvariable variable=moduleVersion;isOutput=true]$version"
+
+          for sdk in macosx iphoneos iphonesimulator ; do
+            make SDK=$sdk
+          done
+          make xcframework
+          if [ -f notes/RELNOTES-$version ] ; then
+            make GITBRANCH=$(Build.SourceBranchName) release
+          fi
+        name: build
+        env:
+          GH_TOKEN: $(GH_TOKEN)
+      - task: CopyFiles@2
+        inputs:
+          Contents: |
+            notes/RELNOTES-$(build.moduleVersion)
+            $(moduleName).xcframework.zip
+          TargetFolder: $(Build.ArtifactStagingDirectory)
+          flattenFolders: true
+      - publish: $(Build.ArtifactStagingDirectory)
+        displayName: 'Cache XCFramework'
+        artifact: framework
+
+  - job: Publish
+    workspace:
+      clean: all
+    dependsOn: Build
+    condition: and(succeeded('Build'),not(canceled()))
+    displayName: Publish SPM metadata Package.swift
+    variables:
+      moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
+    steps:
+      - checkout: 'packageRepo'
+        persistCredentials: true
+        fetchTags: true
+      - download: current
+        artifact: framework
+        displayName: 'Get cached XCFramework'
+      - script: |
+          CHKSUM=$(swift package compute-checksum $(Pipeline.Workspace)/framework/$(moduleName).xcframework.zip)
+          sed -E -i '' '/let moduleName =/s/= ".+"/= "$(moduleName)"/' Package.swift
+          sed -E -i '' '/let version =/s/= ".+"/= "$(moduleVersion)"/' Package.swift
+          sed -E -i '' "/let checksum =/s/= \".+\"/= \"$CHKSUM\"/" Package.swift
+          git config --global user.email "$(gitUserEmail)"
+          git config --global user.name "$(gitUserName)"
+          tag=$(git tag -l $(moduleVersion))
+          if [ -z "$tag" -a -f "$(Pipeline.Workspace)/framework/RELNOTES-$(moduleVersion)" ] ; then
+            echo "publishing Package.swift for module ($(moduleRepoName)) version ($(moduleVersion))"
+            git commit -m "Update SPM to version $(moduleVersion)" Package.swift
+            git tag -am "Release $(moduleRepoName) version $(moduleVersion)" $(moduleVersion)
+            git push origin HEAD:main --follow-tags
+            echo "##vso[task.setvariable variable=createRelease;isOutput=true]true"
+          elif [ -n "$tag" ] ; then
+            echo "notice: $(moduleRepoName) $(moduleVersion) has already been released: skipping release job"
+          else
+            echo "warning: $(moduleRepoName) $(moduleVersion) is not ready for release"
+            echo "         To enable automated release:"
+            echo "         - update the VERSION variable in the Makefile"
+            echo "         - add the file \"notes/RELNOTES-<VERSION>\" to the repo"
+          fi
+        name: publish
+      - script: |
+          rm -rf $(Pipeline.Workspace)/framework
+        displayName: Cleanup workspace
+
+  - job: Release
+    workspace:
+      clean: all
+    dependsOn:
+      - Build
+      - Publish
+    condition: and(and(succeeded('Publish'),not(canceled())),eq(dependencies.Publish.outputs['publish.createRelease'], 'true'))
+    displayName: Release binary SPM XCFramework
+    variables:
+      moduleVersion: $[ dependencies.Build.outputs['build.moduleVersion'] ]
+    steps:
+      - checkout: 'packageRepo'
+        persistCredentials: true
+        fetchTags: true
+      - download: current
+        artifact: framework
+        displayName: 'Get cached XCFramework'
+      - script: |
+          gh release create "$(moduleVersion)" \
+            --verify-tag \
+            --generate-notes \
+            -F $(Pipeline.Workspace)/framework/RELNOTES-$(moduleVersion) \
+            $(Pipeline.Workspace)/framework/$(moduleName).xcframework.zip
+        env:
+          GH_TOKEN: $(GH_TOKEN)
+      - script: |
+          rm -rf $(Pipeline.Workspace)/framework
+        displayName: Cleanup workspace
