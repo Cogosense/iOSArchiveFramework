@@ -45,7 +45,7 @@ DIST_VERSION = 3.8.0
 # Release version on GitHub - bump last digit to make new
 # GitHub release with same distribution version.
 NAME = archive
-VERSION =  3.8.0
+VERSION =  3.8.0-1
 
 #
 # Download location URL
@@ -105,7 +105,7 @@ EXTRA_CFLAGS =
 EXTRA_CXXFLAGS = -stdlib=libc++ -std=c++17
 EXTRA_CPPFLAGS =
 EXTRA_LDFLAGS = -Z -L/usr/lib
-EXTRA_CONFIGURE_ARGS =
+EXTRA_CONFIGURE_ARGS = --without-lzma
 
 #
 # enable bitcode support
